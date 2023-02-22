@@ -1,5 +1,5 @@
-f = open("p16.in")
-lines = open("p16.in").readlines()
+f = open("inputs/day16.in")
+lines = open("inputs/day16.in").readlines()
 
 # save flow rates, edges and stuff
 n_valves = len(lines)
