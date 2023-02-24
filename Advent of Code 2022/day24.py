@@ -28,7 +28,6 @@ def get_best_time(storms, max_x, max_y, from_i, from_j, to_i, to_j, start_time=0
         if a == to_i and b == to_j:
             if time + 1 < best_time:
                 best_time = time + 1
-                print(best_time)
                 q = [t for t in q if t[2] < best_time]
         # check all directions, including current position
         for da, db in ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)):
