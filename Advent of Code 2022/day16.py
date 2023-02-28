@@ -1,4 +1,3 @@
-f = open("inputs/day16.in")
 lines = open("inputs/day16.in").readlines()
 
 # save flow rates, edges and stuff
@@ -32,73 +31,60 @@ for i in range(n_valves):
                 visited.add(k)
     distances.append(distance)
 
-opened = [0] * n_valves
-for i in range(n_valves):
-    if flow_rates[i] == 0:
-        opened[i] = 1
 
-# position, opened, released_pressure, remaining_time
-pending = [(aa_index, (0,) * n_valves, 0, 30)]
+def path_time(path, distances):
+    time = 0
+    for i in range(1, len(path)):
+        time += distances[path[i - 1]][path[i]] + 1
+    return time
+
+
+def is_valid_path(path, distances, final_time=30):
+    return len(set(path)) == len(path) and path_time(path, distances) <= final_time
+
+
+def released_pressure(path, flow_rates, distances, final_time=30):
+    total = 0
+    time = 0
+    for i in range(1, len(path)):
+        time += distances[path[i - 1]][path[i]] + 1
+        total += (final_time - time) * flow_rates[path[i]]
+    return total
+
+
+def extend_path(prefix, n, flow_rates, distances):
+    extended = []
+    for i in range(n):
+        if (
+            i not in prefix
+            and flow_rates[i] > 0
+            and is_valid_path(prefix + [i], distances)
+        ):
+            extended.append(prefix + [i])
+    return extended
+
+
+def generate_final_paths(start, n_valves, distances):
+    paths = [[start]]
+    final_paths = []
+    new_paths = True
+    while new_paths:
+        new_paths = False
+        next_paths = []
+        for path in paths:
+            ep = extend_path(path, n_valves, flow_rates, distances)
+            if len(ep) > 0:
+                next_paths.extend(ep)
+                new_paths = True
+            else:
+                final_paths.append(path)
+        paths = next_paths
+    return final_paths
+
+
 best = 0
-while pending:
-    position, opened, released_pressure, remaining_time = pending.pop()
-    if released_pressure > best:
-        best = released_pressure
-        print(best, opened, remaining_time, len(pending))
-    if remaining_time == 0 or all(opened):
-        continue
-    if remaining_time < 0:
-        print("barf!!")
-        print(position, opened, released_pressure, remaining_time)
-        exit()
-    for other in range(n_valves):
-        # move to any closed valve and open it, check from there
-        if opened[other] or distances[position][other] + 1 >= remaining_time:
-            continue
-        n_released_pressure = released_pressure + flow_rates[other] * (
-            remaining_time - distances[position][other] - 1
-        )
-        n_opened = opened[:other] + (1,) + opened[other + 1 :]
-        pending.append(
-            (
-                other,
-                n_opened,
-                n_released_pressure,
-                remaining_time - distances[position][other] - 1,
-            )
-        )
-
-print("Part 1:", best)
-
-exit()
-# 1777 too low for part 1
-
-
-# brute force all paths
-# position, opened, released_pressure, elapsed_time
-pending = [(aa_index, (0,) * n_valves, 0, 0)]
-best = 0
-while pending:
-    position, opened, released_pressure, elapsed_time = pending.pop()
-    if elapsed_time == 30:
-        if released_pressure > best:
-            best = released_pressure
-            print(best, len(pending))
-        continue
-    if all(opened):
-        released_pressure += (30 - elapsed_time) * sum(
-            opened[i] * flow_rates[i] for i in range(n_valves)
-        )
-        if released_pressure > best:
-            best = released_pressure
-            print(best, len(pending))
-        continue
-    released_pressure += sum(opened[i] * flow_rates[i] for i in range(n_valves))
-    if not opened[position]:
-        n_opened = opened[:position] + (1,) + opened[position + 1 :]
-        pending.append((position, n_opened, released_pressure, elapsed_time + 1))
-    for j, connected in enumerate(edges[position]):
-        if connected:
-            pending.append((j, opened, released_pressure, elapsed_time + 1))
-
+for path in generate_final_paths(aa_index, n_valves, distances):
+    rp = released_pressure(path, flow_rates, distances)
+    if rp > best:
+        best = rp
 print("Part 1:", best)
