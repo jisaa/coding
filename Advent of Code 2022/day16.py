@@ -52,19 +52,20 @@ def released_pressure(path, flow_rates, distances, final_time=30):
     return total
 
 
-def extend_path(prefix, n, flow_rates, distances):
+def extend_path(prefix, n, flow_rates, distances, final_time=30, skip=[]):
     extended = []
     for i in range(n):
         if (
             i not in prefix
+            and i not in skip
             and flow_rates[i] > 0
-            and is_valid_path(prefix + [i], distances)
+            and is_valid_path(prefix + [i], distances, final_time)
         ):
             extended.append(prefix + [i])
     return extended
 
 
-def generate_final_paths(start, n_valves, distances):
+def generate_final_paths(start, n_valves, distances, final_time=30, skip=[]):
     paths = [[start]]
     final_paths = []
     new_paths = True
@@ -72,7 +73,7 @@ def generate_final_paths(start, n_valves, distances):
         new_paths = False
         next_paths = []
         for path in paths:
-            ep = extend_path(path, n_valves, flow_rates, distances)
+            ep = extend_path(path, n_valves, flow_rates, distances, final_time, skip)
             if len(ep) > 0:
                 next_paths.extend(ep)
                 new_paths = True
@@ -88,3 +89,17 @@ for path in generate_final_paths(aa_index, n_valves, distances):
     if rp > best:
         best = rp
 print("Part 1:", best)
+
+# 10 minutes
+best = 0
+all_paths = generate_final_paths(aa_index, n_valves, distances, 26)
+all_paths = tuple(tuple(p) for p in all_paths)
+for i, my_path in enumerate(all_paths):
+    for elephant_path in all_paths[i + 1 :]:
+        if set(my_path).intersection(set(elephant_path)) == set([aa_index]):
+            rp1 = released_pressure(my_path, flow_rates, distances, 26)
+            rp2 = released_pressure(elephant_path, flow_rates, distances, 26)
+            rp = rp1 + rp2
+            if rp > best:
+                best = rp
+print("Part 2:", best)
